@@ -89,9 +89,9 @@ $ python -m 4_energy_cost_evaluation.evaluate_partitioning_cost
 $ cd lif-network-simulation/simulator
 $ cmake -DCMAKE_BUILD_TYPE=Release .
 $ make -j
+$ cd lif-network-simulation/simulaton
+$ ./bin/lif-simulation-main
 ```
-
-
 
 
 
