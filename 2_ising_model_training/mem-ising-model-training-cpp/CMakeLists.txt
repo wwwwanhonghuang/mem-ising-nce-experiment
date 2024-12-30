@@ -36,11 +36,16 @@ target_link_libraries(configuration_generator ${LINK_LIBS})
 add_executable(mem_ising_training_main ${SOURCES} training-main.cpp)
 target_link_libraries(mem_ising_training_main PRIVATE ${LINK_LIBS})
 
-add_executable(dynamical_mem_ising_training_main ${SOURCES} dynamical-ising-training-main.cpp)
-target_link_libraries(dynamical_mem_ising_training_main PRIVATE ${LINK_LIBS})
+# add_executable(dynamical_mem_ising_training_main ${SOURCES} dynamical-ising-training-main.cpp)
+# target_link_libraries(dynamical_mem_ising_training_main PRIVATE ${LINK_LIBS})
 
 add_executable(partition_function_inference ${SOURCES} partition-function-inference.cpp)
 target_link_libraries(partition_function_inference PRIVATE ${LINK_LIBS})
+
+
+add_executable(essembly_avergae_inference ${SOURCES} essembly-avergae-inference.cpp)
+target_link_libraries(essembly_avergae_inference PRIVATE ${LINK_LIBS})
+
 
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)

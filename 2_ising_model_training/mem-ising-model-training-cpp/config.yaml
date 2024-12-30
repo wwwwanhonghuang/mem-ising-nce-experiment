@@ -13,5 +13,13 @@ mem-trainer:
   clip_threshold: 0.1
 
 partition_function_inference:
-  all_ising_spin_configuration_file: "data/configuration_n29.bin"
-  ising_model_serialized_file: "data/parameters_n29_reservoir/model_iter1_1.010773.ising"
+  n: 29
+  full_spin_configuration_file_path: "data/configuration_n29.bin"
+  ising_model_serialized_file: "../../data/parameters_n29_reservoir/model_iter1_1.010773.ising"
+  
+  
+essembly_average_inference:
+  n: 29
+  full_spin_configuration_file_path: "../../data/full_configuration_n29.bin"
+  ising_model_serialized_file: "../../data/parameters_n29_reservoir/model_iter1_1.010773.ising"
+  output: "../../data/model_iter1_1.010773.essembly_average"

@@ -35,13 +35,33 @@ After `config.yaml` is prepared, follow command can generate full ising spin con
 Each configuration is encoded into a 32-bit integer. As such, currently, the trainer and the generator support at most 32 neuron populations.
 
 ``` bash
-$ cd <path-to-2_ising_model_training>
+$ cd <path-to-2_ising_model_training>/mem-ising-model-training-cpp
 $ ./bin/configuration_generator
 ```
 
 
 
+### 2.3. Train Ising Model
 
+``` bash
+$ cd <path-to-2_ising_model_training>/mem-ising-model-training-cpp
+$ ./bin/mem_ising_training_main
+```
+
+
+
+### 2.4. Evaluation of Training
+
+#### 2.4.1 Reliability
+
+The reliability is placed on the record file name.
+
+### 2.4.2 Essembly Average Inference
+
+``` bash
+$ cd <path-to-2_ising_model_training>/mem-ising-model-training-cpp
+$ ./bin/essembly_avergae_inference
+```
 
 
 

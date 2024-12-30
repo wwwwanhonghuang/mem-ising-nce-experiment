@@ -28,13 +28,13 @@ int main(){
         std::cerr << "Error: " << e.what() << std::endl;
         return -1;
     }
-    int temp_n = config["mem-trainer"]["n"].as<int>();
+    int temp_n = config["partition_function_inference"]["n"].as<int>();
     if (temp_n < 0) {
         std::cerr << "Error: n cannot be negative." << std::endl;
         return -1;
     }
     std::string ising_model_serialized_file = config["partition_function_inference"]["ising_model_serialized_file"].as<std::string>();
-    std::string all_ising_spin_configuration_file = config["partition_function_inference"]["all_ising_spin_configuration_file"].as<std::string>();
+    std::string all_ising_spin_configuration_file = config["partition_function_inference"]["full_spin_configuration_file_path"].as<std::string>();
 
     std::cout << "1. load ising model from serialized file " << ising_model_serialized_file << std::endl;
     std::shared_ptr<IsingModel> ising_model = 
@@ -62,9 +62,6 @@ int main(){
     std::cout << "  - partition functions Z1 = " << std::setprecision(39) << ising_model_inferencer->get_Z(1) << std::endl;
     std::cout << "  - partition functions Z2 = " << std::setprecision(39) << ising_model_inferencer->get_Z(2) << std::endl;
 
-    /*
-    - partition functions Z1 = 7457414.45870293505822701263241469860077
-    - partition functions Z2 = 429.486658403292718311217157634018803947
-    */
+    
 }
 
