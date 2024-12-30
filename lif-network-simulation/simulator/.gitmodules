@@ -1,0 +1,3 @@
+[submodule "snn-lib-cpp"]
+	path = snn-lib-cpp
+	url = git@github.com:wwwwanhonghuang/snn-lib-cpp.git
