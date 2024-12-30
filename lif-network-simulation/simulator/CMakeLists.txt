@@ -11,6 +11,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+set(LINK_LIBS yaml-cpp)
+
 add_compile_options(-Werror -Wextra -Wpedantic -O3)
 add_compile_options(-Wno-unused-parameter)
 
@@ -75,7 +77,8 @@ target_include_directories(snn-lib-cpp
     PUBLIC
     ${CMAKE_SOURCE_DIR}/snn-lib-cpp/include
 )
-target_link_libraries(lif-simulation-main snn-lib-cpp)
+target_link_libraries(lif-simulation-main snn-lib-cpp ${LINK_LIBS})
+
 target_link_libraries(possion-lif-main snn-lib-cpp)
 
 target_compile_options(snn-lib-cpp PRIVATE -Wno-unused-parameter -g)

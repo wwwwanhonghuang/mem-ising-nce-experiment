@@ -27,6 +27,7 @@
 #include <numeric>
 #include <cassert>
 #include <memory>
+#include <yaml-cpp/yaml.h>
 
 
 // TODO: add dynamical building of initializer and recorder.
@@ -134,16 +135,31 @@ std::vector<int> select_inhibitory_neurons(int N, int n_inhibitory_neurons, std:
 }
 
 int main(){
-   
-    const int N = 29;
-    const double rho = 0.016;
+    YAML::Node config;
+    try{
+        config = YAML::LoadFile("config.yaml");        
+    }catch(const YAML::Exception& e){
+        std::cerr << "Error: " << e.what() << std::endl;
+        return -1;
+    }
+    int temp_n = config["mem-trainer"]["n"].as<int>();
+    if (temp_n < 0) {
+        std::cerr << "Error: n cannot be negative." << std::endl;
+        return -1;
+    }
+    
+    
+    const size_t N = (size_t)config["lif-simulation"]["N"].as<int>();
+    const double rho = config["lif-simulation"]["rho"].as<double>();
+    const int time_steps = config["lif-simulation"]["time_steps"].as<int>();
+    const double dt = config["lif-simulation"]["dt"].as<double>();
     const double L = std::cbrt(N / rho);
 
     // Connect neurons
-    const int max_k_out = 29;
+    const int max_k_out = N;
     double Z_k_out = 0.0;    
     const int k_min = 2;
-    const int k_max = 29;
+    const int k_max = N;
     const double lambda_r = 1 / 5.0;
 
     std::shared_ptr<snnlib::NetworkBuilder> builder = std::make_shared<snnlib::NetworkBuilder>();
@@ -320,7 +336,7 @@ int main(){
     std::shared_ptr<snnlib::SNNNetwork> network = builder->build_network();
 
     snnlib::SNNSimulator simulator;
-    simulator.simulate(network, 70000, 1e-3, recorder_facade);
+    simulator.simulate(network, time_steps, dt, recorder_facade);
 
     return 0;
 }
