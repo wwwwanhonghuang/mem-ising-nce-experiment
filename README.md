@@ -65,11 +65,31 @@ $ ./bin/essembly_avergae_inference
 
 
 
+## 3. Ising Spin Configuration MCMC Sampling
+
+``` bash
+$ python -m 3_ising_spin_configuration_sampling.sampling_ising_spin_configurations
+```
+
+
+
+## 4. Energy Cost Evaluation
+
+``` bash
+$ python -m 4_energy_cost_evaluation.evaluate_partitioning_cost
+```
 
 
 
 
 
+## A1. LIF Network Simulation with simulator
+
+``` bash
+$ cd lif-network-simulation/simulator
+$ cmake -DCMAKE_BUILD_TYPE=Release .
+$ make -j
+```
 
 
 
