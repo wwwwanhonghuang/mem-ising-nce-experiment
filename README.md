@@ -21,7 +21,7 @@ $ python -m 1_produce_observation_data.produce_observation_data_from_simulator_r
 ### 2.1 Build Project
 
 ``` bash 
-$ cd \mem-ising-nce-experiment\2_ising_model_training\mem-ising-model-training-cpp
+$ cd 2_ising_model_training\mem-ising-model-training-cpp
 $ cmake -DCMAKE_BUILD_TYPE=Release .
 $ make -j
 ```
