@@ -1,0 +1,8 @@
+mcmc_sampling:
+  ising_model_file: "../data/model_iter1_1.010773_reservoir.ising"
+  Z1: 7457414.45870293505822701263241469860077
+  Z2: 429.486658403292718311217157634018803947
+  log_2_n_samples: 19
+  log_2_sample_interval: 9
+  output_file: "../data/ising-spin-mcmc-samples-spike-chain.npy"
+  beta: 1
