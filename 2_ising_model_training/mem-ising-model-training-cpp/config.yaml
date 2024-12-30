@@ -1,0 +1,17 @@
+configuration_generator:
+  n: 29
+  output_file: "../../data/full_configuration_n29.bin"
+
+mem-trainer:
+  n: 29
+  ising_training_samples_spin_configurations: "../../data/full_configuration_n29.bin"
+  ising_observation_spin_configurations: "../../data/observation_ising_spin_configuration_spike_chain.bin"
+  iterations: 100
+  evaluation: true
+  training:
+    alpha: 0.05
+  clip_threshold: 0.1
+
+partition_function_inference:
+  all_ising_spin_configuration_file: "data/configuration_n29.bin"
+  ising_model_serialized_file: "data/parameters_n29_reservoir/model_iter1_1.010773.ising"
