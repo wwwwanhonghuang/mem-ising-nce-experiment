@@ -6,7 +6,7 @@ import argparse
 from utils.utils import configuration_int32_encoding
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--record_path", type=str, default="./data/synn-profiled-spikes/spike-chain\spikes_st1000000_weight_0.75")
+parser.add_argument("--record_path", type=str, default="./data/synn-profiled-spikes/spike-chain/spikes_st1000000_weight_0.75")
 parser.add_argument("--n_neuron_pops", type=int, default=29)
 parser.add_argument("--T", type=int, default=1000000)
 parser.add_argument("--output", type=str, default="./data/observation_ising_spin_configuration_spike_chain.bin")

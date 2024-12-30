@@ -43,7 +43,7 @@ spike_record_file_path = [os.path.join(log_base_path, file_name) for file_name i
 
 spike_record = {}
 for file_path in spike_record_file_path:
-    spike_emission_time = list(pd.read_csv(file_path)["t\id"])
+    spike_emission_time = list(pd.read_csv(file_path)["t\\id"])
     spike_record[int(re.match(r'.*neuron_([0-9]+).*', file_path).group(1))] = spike_emission_time
 
 
