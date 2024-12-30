@@ -1,0 +1,7 @@
+evaluation:
+  ising_model_file: "../data/model_iter1_1.010773_reservoir.ising"
+  Z1: 7457414.45870293505822701263241469860077
+  Z2: 429.486658403292718311217157634018803947
+  log_2_n_samples: 18
+  output_file: "../data/energy-evaluation-records-spike-chain.npy"
+  energy_profiling_record_base_path: "../data/synn-profiled-spikes/spike-chain/spikes_st1000000_weight_0.75"
