@@ -1,6 +1,5 @@
 #include "utils/ising_io.hpp"
 
-// Method to serialize the Ising model to a file
 void ISINGIO::serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_model, const std::string& model_filepath) {
     std::ofstream out_file(model_filepath);
     if (!out_file.is_open()) {
@@ -29,6 +28,36 @@ void ISINGIO::serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_mo
     out_file.close();
 }
 
+
+void ISINGIO::serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_model, const std::string& model_filepath, long double Z1, long double Z2) {
+    std::ofstream out_file(model_filepath);
+    if (!out_file.is_open()) {
+        std::cerr << "Error: Could not open file for writing.\n";
+        return;
+    }
+
+    // Save the number of sites and temperature
+    out_file << ising_model->n_sites << "\n";
+    out_file << ising_model->temperature << "\n";
+
+    // Save the interaction matrix J
+    for (const auto& row : ising_model->J) {
+        for (long double value : row) {
+            out_file << value << " ";
+        }
+        out_file << "\n";
+    }
+
+    // Save the external field H
+    for (long double h : ising_model->H) {
+        out_file << h << " ";
+    }
+    out_file << "\n";
+    out_file << Z1 << " " << Z2;
+    out_file << "\n";
+
+    out_file.close();
+}
 std::shared_ptr<IsingModel> ISINGIO::load_ising_model_from_file(const std::string& model_filepath) {
     std::ifstream in_file(model_filepath);
     if (!in_file.is_open()) {

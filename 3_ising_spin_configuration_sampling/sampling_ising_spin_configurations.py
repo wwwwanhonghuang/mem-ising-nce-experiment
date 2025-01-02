@@ -53,7 +53,7 @@ def sample_n_configurations(ising_model, ising_inferencer, num_samples, num_step
     return np.array(samples)
 
 
-with open("config.yaml", "r") as file:
+with open("3_ising_spin_configuration_sampling/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
@@ -64,7 +64,6 @@ log_2_n_samples = config["mcmc_sampling"]["log_2_n_samples"]
 log_2_sample_interval = config["mcmc_sampling"]["log_2_sample_interval"]
 beta = config["mcmc_sampling"]["beta"]
 output_file = config["mcmc_sampling"]["output_file"]
-
 
 ising_model = IsingModelIO.read_ising_model_from_file(ising_model_file)
 inferencer = IsingInferencer(Z1 = Z1, Z2 = Z2)
