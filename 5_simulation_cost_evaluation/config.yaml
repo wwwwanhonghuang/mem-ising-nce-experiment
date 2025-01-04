@@ -1,0 +1,9 @@
+cost-sampling:
+  record_path: "../data/simulator-lif-spikes/logs-100000"
+  n_neuron_pops: 29
+  n_deployment_samples: 5000
+  T: 70000
+  output: "../data/sample-lif-simulation-cost.sim_cost"
+  
+  
+

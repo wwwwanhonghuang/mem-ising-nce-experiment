@@ -214,7 +214,7 @@ void IsingMEMTrainer::update_model_parameters(){
     for (int i = 0; i < ising_model->n_sites; i++) {
         long double delta = buffer_beta_H[i];
         long double grad = clip_gradient(delta);
-        ising_model->H[i] += grad;
+        ising_model->H[i] -= grad;
         assert(!std::isnan(grad));
 
     }
@@ -228,7 +228,7 @@ void IsingMEMTrainer::update_model_parameters(){
             }
             assert(!std::isnan(grad));
 
-            ising_model->J[i][j] += grad;
+            ising_model->J[i][j] -= grad;
         }
     }
 };
@@ -247,6 +247,30 @@ inline long double laplace_smoothing(long double p, int n_configurations){
 inline long double laplace_smoothing(long double x, int N, int d, double alpha){
     return (x + alpha) / (N + alpha * d);
 }
+
+
+long double IsingMEMTrainer::evaluate_KL(){
+
+    long double KL = 0.0;
+
+    #pragma omp parallel for reduction(+:KL)
+    for(int configuration : train_configurations){
+        long double p2 = 
+            ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
+        p2 = p2 + 1e-39; // laplace_smoothing(p2, n_configurations);
+
+        
+        long double p_observation = 0.0;
+        if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
+            p_observation = observation_configuration_possibility_map[configuration];
+        }
+        p_observation = p_observation + 1e-39; // laplace_smoothing(p_observation, n_configurations);
+        KL += p_observation * std::log(p_observation / p2);
+    }
+    return KL;
+};
+
+
 long double IsingMEMTrainer::evaluation(){
     long double S1 = 0.0; // order-1 entropy
     long double S2 = 0.0; // order-2 entropy
@@ -362,7 +386,8 @@ void IsingMEMTrainer::gradient_descending_step(){
     for(int i = 0; i < ising_model->n_sites; i++){
         long double smoothed_observation_value = PLUS_EPISLON_SMOOTHING(obs_essembly_avgerage_si[i]); // obs_essembly_avgerage_si[i] == 0 ? 1e-39 : obs_essembly_avgerage_si[i]; // laplace_smoothing(obs_essembly_avgerage_si[i], N, 1 << ising_model->n_sites, 1e-39);
         long double model_value = model_essembly_avgerage_si[i]; // == 0 ? 1e-39 : model_essembly_avgerage_si[i];  // laplace_smoothing(model_essembly_avgerage_si[i], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
-        long double delta = alpha * std::log(smoothed_observation_value / model_value); 
+        long double delta = -alpha * (smoothed_observation_value - model_value);
+        //std::log(smoothed_observation_value / model_value); 
             buffer_beta_H[i] = delta;
     }
 
@@ -371,8 +396,8 @@ void IsingMEMTrainer::gradient_descending_step(){
         for(int j = 0; j < ising_model->n_sites; j++){
 		long double smoothed_observation_value = PLUS_EPISLON_SMOOTHING(obs_essembly_avgerage_si_sj[i][j]); //  == 0 ? 1e-39 : 0; // laplace_smoothing(obs_essembly_avgerage_si_sj[i][j], N, 1 << ising_model->n_sites, 1e-39);
         long double model_value = model_essembly_avgerage_si_sj[i][j]; // == 0 ? 1e-39 : 0; // laplace_smoothing(model_essembly_avgerage_si_sj[i][j], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
-        long double delta = alpha * 
-                std::log(smoothed_observation_value / model_value); 
+        long double delta = -alpha * (smoothed_observation_value - model_value);
+                // std::log(smoothed_observation_value / model_value); 
             buffer_beta_J[i][j] = delta;
         }
     }

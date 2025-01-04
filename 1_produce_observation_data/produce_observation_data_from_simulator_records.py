@@ -40,13 +40,15 @@ T = args.T
 
 log_base_path = args.record_path
 spike_record_file_path = [os.path.join(log_base_path, file_name) for file_name in list(filter(lambda file_path: file_path[-6:] == "spikes", os.listdir(log_base_path)))]
-
+print(spike_record_file_path)
 spike_record = {}
 for file_path in spike_record_file_path:
+    print(f" in {file_path}")
     spike_emission_time = list(pd.read_csv(file_path)["t\\id"])
-    spike_record[int(re.match(r'.*neuron_([0-9]+).*', file_path).group(1))] = spike_emission_time
-
-
+    neuron_population_id = int(re.match(r'.*neuron_([0-9]+).*', file_path).group(1))
+    spike_record[neuron_population_id] = spike_emission_time
+    print(f"set {neuron_population_id} spikes. len = {len(spike_emission_time)} ")
+print([len(spike_record[record]) for record in spike_record])
 n_time_steps = T
 n_neuron_pops = args.n_neuron_pops
 observation_data = np.zeros((T, n_neuron_pops))

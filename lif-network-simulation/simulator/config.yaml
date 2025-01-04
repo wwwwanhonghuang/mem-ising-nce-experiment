@@ -1,0 +1,5 @@
+lif-simulation:
+  time_steps: 60000
+  dt: 0.001
+  N: 29
+  rho: 0.016

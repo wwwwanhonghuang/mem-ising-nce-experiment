@@ -142,14 +142,9 @@ int main(){
         std::cerr << "Error: " << e.what() << std::endl;
         return -1;
     }
-    int temp_n = config["mem-trainer"]["n"].as<int>();
-    if (temp_n < 0) {
-        std::cerr << "Error: n cannot be negative." << std::endl;
-        return -1;
-    }
     
     
-    const size_t N = (size_t)config["lif-simulation"]["N"].as<int>();
+    const size_t N = (size_t)(config["lif-simulation"]["N"].as<int>());
     const double rho = config["lif-simulation"]["rho"].as<double>();
     const int time_steps = config["lif-simulation"]["time_steps"].as<int>();
     const double dt = config["lif-simulation"]["dt"].as<double>();
@@ -275,6 +270,9 @@ int main(){
 
     std::normal_distribution<> d(0.0, 0.4);
 
+    std::uniform_real_distribution<double> uniform_dist(0.0, 1.0);
+
+
     std::cout << "6. Build connections" << std::endl;
     for(size_t i = 0; i < N; i++){
         std::string neuron_name = "neuron_" + std::to_string(i);
@@ -315,7 +313,9 @@ int main(){
             std::string post_synapse_neuron_name = "neuron_" + std::to_string(neuron_id_target);
 
             double random = std::clamp(std::abs(d(gen)), 0.0, 1.0);
-
+            if (uniform_dist(gen) < 0.25) {
+                random = 0.0;
+            }
             builder->build_synapse<snnlib::CurrentBasedKernalSynapse>(synapse_name, 
                 pre_synapse_neuron_name, post_synapse_neuron_name, "double_exponential", 
             snnlib::CurrentBasedKernalSynapse::default_parameters()

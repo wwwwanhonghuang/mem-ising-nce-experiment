@@ -137,19 +137,25 @@ int main(){
         std::cout << "      - partition functions Z2 = " << ising_model_inferencer->get_Z(2) << std::endl;
 
         //　Evaluation
-        double reliability = INFINITY;
+        /* double reliability = INFINITY;
         if(require_evaluation){
             std::cout << "  - " << "Evaluate reliability..." << "[" << current_time() << "]" << std::endl;
             reliability = ising_model_mem_trainer->evaluation();
         }
-        std::cout << std::endl;
+        std::cout << std::endl; */
+        double evaluted_KL_divergence = INFINITY;
+        if(require_evaluation){
+            std::cout << "  - " << "Evaluate KL divergence..." << "[" << current_time() << "]" << std::endl;
+            evaluted_KL_divergence = ising_model_mem_trainer->evaluate_KL();
+            std::cout << "K-L divergence = " << evaluted_KL_divergence << std::endl;
+        }
 
         // Save the model
         ISINGIO::serialize_ising_model_to_file(ising_model, 
             std::string("data/model_iter") + 
             std::to_string(iteration_id + 1) + 
             std::string("_") + 
-            std::to_string(reliability) +
+            std::to_string(evaluted_KL_divergence) +
             std::string(".ising"));     
     }
     return 0;
