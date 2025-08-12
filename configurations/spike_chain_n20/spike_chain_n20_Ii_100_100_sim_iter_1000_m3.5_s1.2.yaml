@@ -1,0 +1,28 @@
+project:
+  name: "spike_chain_n20_Ii_100_100_sim_iter_1000"
+
+network:
+  type: spike_chain
+  n_pops: 20
+  simulation_times: 2000
+  neurons_per_pop: 256
+  dt: 1.0
+  image_store:
+    enabled: true
+    raster_image: "image_raster.png"
+  spike_data_store:
+    path: "spike_chain.npz"
+  currents:
+    type: interval
+    base_current: 10
+    start_time: 20
+    noise_level: 0.4
+    zero_current_interval: 100
+    current_interval: 100
+  params:
+    chain_weight_mean: 3.5
+    chain_weight_std: 1.2
+
+
+ising_training:
+  n_epoches: 1000

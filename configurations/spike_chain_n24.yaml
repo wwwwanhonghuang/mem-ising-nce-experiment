@@ -1,0 +1,15 @@
+network:
+  type: spike_chain
+  n_pops: 24
+  simulation_times: 2000
+  neurons_per_pop: 256
+  dt: 1.0
+  image_store:
+    enabled: true
+    raster_image: "./images/image_raster.png"
+  spike_data_store:
+    path: "./data/spike_chain_iter1000_record_n24.npz"
+
+
+ising_training:
+  n_epoches: 200
