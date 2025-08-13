@@ -2,6 +2,12 @@
 import numpy as np
 from typing import List
 
+
+
+import networkx as nx
+import community as community_louvain
+from networkx.algorithms.community import kernighan_lin_bisection
+
 # ---------- Utilities ----------
 
 def intra_score(J: np.ndarray, parts: List[List[int]], use_abs: bool = True):
@@ -189,3 +195,100 @@ def refine_local_swaps(J: np.ndarray, parts: List[List[int]], use_abs: bool = Tr
             if improved: break
 
     return parts
+
+def partition_simple_kmedoids(J: np.ndarray, K: int, use_abs: bool = True):
+    """
+    Simple k-medoids-like partitioning using only NumPy.
+    
+    Args:
+        J : np.ndarray
+            Coupling matrix (square, symmetric).
+        K : int
+            Maximum number of sites per group.
+        use_abs : bool
+            If True, use absolute coupling values for clustering.
+            
+    Returns:
+        List[List[int]] : List of groups (each group is a list of node indices).
+    """
+    W = np.abs(J) if use_abs else J
+    n = W.shape[0]
+    
+    # Convert similarity to distance
+    D = np.max(W) - W
+    D = (D + D.T) / 2.0  # ensure symmetry
+
+    # Choose initial medoids greedily: pick the most connected node first, then farthest from existing medoids
+    medoids = [np.argmax(np.sum(W, axis=1))]
+    for _ in range(1, max(1, n // K)):
+        remaining = [i for i in range(n) if i not in medoids]
+        # Farthest-point heuristic: pick node farthest from closest medoid
+        dists = [min(D[i, m] for m in medoids) for i in remaining]
+        medoids.append(remaining[np.argmax(dists)])
+    
+    # Assign each node to nearest medoid
+    labels = np.argmin(D[:, medoids], axis=1)
+    
+    # Convert labels to list-of-lists
+    parts = {}
+    for i, l in enumerate(labels):
+        parts.setdefault(l, []).append(i)
+    parts = list(parts.values())
+
+    # Split any group larger than K
+    final_parts = []
+    for grp in parts:
+        if len(grp) > K:
+            # chunk into multiple groups of size <= K
+            for i in range(0, len(grp), K):
+                final_parts.append(grp[i:i+K])
+        else:
+            final_parts.append(grp)
+    
+    return final_parts
+
+
+
+
+def partition_louvain(J: np.ndarray, K: int, use_abs: bool = True) -> List[List[int]]:
+    """Detect communities via Louvain modularity, then split if needed."""
+    W = np.abs(J) if use_abs else J
+    n = W.shape[0]
+    G = nx.Graph()
+    for i in range(n):
+        for j in range(i+1, n):
+            if W[i,j] > 0:
+                G.add_edge(i, j, weight=W[i,j])
+    labels_dict = community_louvain.best_partition(G, weight='weight', random_state=42)
+    labels = [labels_dict[i] for i in range(n)]
+    parts = to_parts_from_assignment(labels)
+    final_parts = []
+    for grp in parts:
+        if len(grp) > K:
+            final_parts.extend(finalize_groups(grp, K))
+        else:
+            final_parts.append(grp)
+    return final_parts
+
+
+def partition_kernighan_lin(J: np.ndarray, K: int, use_abs: bool = True) -> List[List[int]]:
+    """Recursively bisect with Kernighan–Lin until all groups ≤ K."""
+    W = np.abs(J) if use_abs else J
+    n = W.shape[0]
+    G = nx.Graph()
+    for i in range(n):
+        for j in range(i+1, n):
+            if W[i,j] > 0:
+                G.add_edge(i, j, weight=W[i,j])
+
+    parts = [list(range(n))]
+    final_parts = []
+    while parts:
+        grp = parts.pop()
+        if len(grp) <= K:
+            final_parts.append(grp)
+        else:
+            subG = G.subgraph(grp)
+            A, B = kernighan_lin_bisection(subG, weight='weight')
+            parts.extend([list(A), list(B)])
+    return final_parts

@@ -74,23 +74,48 @@ def partition_J(
     use_abs: bool = True, 
     refine: bool = True
 ):
-    """Partition using one of: 'greedy' | 'agglomerative' | 'spectral'.
-    Returns (parts, score). Optionally refine with local swaps."""
+    """
+    Partition sites into groups of size <= K using various methods.
+    
+    Supported methods:
+      - 'greedy'
+      - 'agglomerative'
+      - 'spectral'
+      - 'simple_kmedoids'   : k-medoids like clustering using only numpy/scipy
+      - 'louvain' : community detection using NetworkX greedy modularity - louvain
+      - 'kernighan_lin'     : recursive Kernighan–Lin bisection
+    
+    Returns:
+      parts: List of lists of site indices
+      score: Intra-group weight sum
+    """
+    
     methods: dict[str, Callable[..., List[List[int]]]] = {
         "greedy": partition_greedy,
         "agglomerative": partition_agglomerative,
         "spectral": partition_spectral,
+        "simple_kmedoids": partition_simple_kmedoids,
+        "louvain": partition_louvain,
+        "kernighan_lin": partition_kernighan_lin,
     }
+
     if method not in methods:
         raise ValueError(f"Unknown method '{method}'. Choose from {list(methods.keys())}.")
 
+    # Partition
     parts = methods[method](J, K, use_abs=use_abs)
+
+    # Optional local refinement
     if refine:
         parts = refine_local_swaps(J, parts, use_abs=use_abs, max_passes=10)
+
+    # Compute intra-group score
     score = intra_score(J, parts, use_abs=use_abs)
+
     return parts, score
 
-methods = ['greedy', 'agglomerative', 'spectral']
+
+methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
 partition_save_root = os.path.join("project", project_name, "partition_schemes")
 os.makedirs(partition_save_root, exist_ok=True)
  
