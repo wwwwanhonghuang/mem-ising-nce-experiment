@@ -9,13 +9,17 @@ from tqdm import tqdm
 import pickle
 import time
 import yaml
+from numpy.lib.stride_tricks import sliding_window_view
 
+def sliding_window_mean(mat, K):
+    windows = sliding_window_view(mat, (K, mat.shape[1]))[:, 0, :, :]
+    return windows.mean(axis=1)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--plus_n_std', type=int, default=2)
-parser.add_argument('--image_save_path_root', type=str, default="./images")
+parser.add_argument('--plus_n_std', type=int, default=0.5)
 parser.add_argument('--configuration-file-path', type=str)
 
+window_size = 10
 
 args = parser.parse_args()
 
@@ -29,14 +33,22 @@ with open(configuration_file_path, 'r') as file:
 print("loaded configurations:")
 print(config)
 
-image_save_path_root = args.image_save_path_root
 plus_n_std = args.plus_n_std
-model_save_path_root = config['ising_training']['model_save_path']
 n_sites = config['network']['n_pops']
+project_name = config['project']['name']
+
+images_root = os.path.join("projects", project_name, "images")
+model_save_root = os.path.join("projects", project_name, "model_save")
+data_root = os.path.join("projects", project_name, "data")
+image_save_path_root = images_root
 
 n_epoches = config['ising_training']['n_epoches']
 neurons_per_pop = config['network']['neurons_per_pop']
-record_file_path = config['network']['spike_data_store']['path'] 
+record_file_path = os.path.join(data_root, config['network']['spike_data_store']['path'])
+model_save_path_root = model_save_root
+
+
+
 
 data = np.load(record_file_path)
 
@@ -53,6 +65,8 @@ for index, neural_idx in enumerate(neuron_indices_all):
     spiking_mat[int(spike_times_all[index]), neural_idx[0], neural_idx[1]] = 1
     
 reduced_mat = spiking_mat.sum(axis=2) / neurons_per_pop
+
+reduced_mat = sliding_window_mean(reduced_mat, window_size)
 
 threshold = reduced_mat.flatten().mean() + plus_n_std * reduced_mat.flatten().std()
 
@@ -73,7 +87,7 @@ ising_model.H = np.random.rand(n_sites)
 
 print(f'Generate Configurations.')
 configs = ConfigurationGenerator().all_configurations(n_sites=n_sites)
-save_full_configuration = True
+save_full_configuration = False
 if save_full_configuration:
     np.save(f"data/full_configurations_n{n_sites}.npy", configs)
     
@@ -124,7 +138,7 @@ def on_epoch_end(ctx):
     with open(store_model_file, 'wb') as f:
         pickle.dump(ctx, f)
 
-trained_model = trainer.train(reduced_mat, epochs=total_epoches, learning_rate=0.01, epoch_callback=on_epoch_end, configs=configs)
+trained_model = trainer.train(reduced_mat, epochs=total_epoches, learning_rate=0.1, epoch_callback=on_epoch_end, configs=configs)
 
 
 import matplotlib.pyplot as plt
@@ -168,6 +182,6 @@ def plot_alignment(observation_dataset, inferencer):
 
     plt.tight_layout()
     plt.xlim([0.,1.])
-    plt.savefig("compare.png")
+    plt.savefig(os.path.join(image_save_path_root, "compare.png"))
 trainer.inferencer.update_partition_function()
 plot_alignment(reduced_mat, trainer.inferencer)

@@ -39,7 +39,6 @@ neurons_per_pop = config['network']['neurons_per_pop']
 dt = config['network']['dt']
 project_name = config['project']['name']
 
-os.makedirs(project_name, exist_ok=True)
 os.makedirs(os.path.join("projects", project_name, "images"), exist_ok=True)
 os.makedirs(os.path.join("projects", project_name, "model_save"), exist_ok=True)
 os.makedirs(os.path.join("projects", project_name, "data"), exist_ok=True)
@@ -51,13 +50,33 @@ data_root = os.path.join("projects", project_name, "data")
 if config['network']['type'] == 'spike_chain':
     populations, connection_matrices = get_spike_chain(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
             dt = dt, chain_weight_mean=config['network']['params']['chain_weight_mean'], chain_weight_std=config['network']['params']['chain_weight_std'])
+    print(f"create spike_chain network, with chain_weight_mean = {config['network']['params']['chain_weight_mean']}, chain_weight_std={config['network']['params']['chain_weight_std']}")
+elif config['network']['type'] == 'reservoir':
+    populations, connection_matrices = get_random_reservoir(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
+            dt = dt, weight_mean=config['network']['params']['weight_mean'], weight_std=config['network']['params']['weight_std'])
+    print(f"create reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, chain_weight_std={config['network']['params']['weight_std']}")
+elif config['network']['type'] == 'bias_reservoir':
+    populations, connection_matrices = get_biased_reservoir(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
+            dt = dt, weight_mean=config['network']['params']['weight_mean'], weight_std=config['network']['params']['weight_std'])
+    print(f"create bias reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, chain_weight_std={config['network']['params']['weight_std']}")
 else:
     raise NotImplementedError
 
+weights_all_neurons = []
+for p in populations:
+    weights_all_neurons.append(p.W)
+    print(p.W.sum())
+np.save(os.path.join(data_root, "inner_pops_connection_matrices.npy"), weights_all_neurons, allow_pickle=True)
+
+
+
 time = np.arange(0, T, dt)
 
-current_generator = IntervalCurrentGenerator(num_pops=num_pops, n_times=T, neurons_per_pop=neurons_per_pop)
-I_ext = current_generator.generate_currents()
+if config['network']['currents']['type'] == 'interval':
+    select_neuron_populations = config['network']['currents']['select_neuron_populations']
+    apply_current_times_limits = config['network']['currents']['apply_current_times_limits']
+    current_generator = IntervalCurrentGenerator(num_pops=num_pops, n_times=T, neurons_per_pop=neurons_per_pop, select_neurons=select_neuron_populations, limit_current_times=apply_current_times_limits)
+    I_ext = current_generator.generate_currents()
 
 # Prepare recording arrays
 V_trace = np.zeros((len(time), num_pops, neurons_per_pop))
@@ -112,9 +131,13 @@ plt.ylim([-1, num_pops*neurons_per_pop])
 plt.savefig(os.path.join(images_root, config['network']['image_store']['raster_image']))
 np.savez(os.path.join(data_root, config['network']['spike_data_store']['path']), 
          neuron_indices_all=neuron_indices_all, spike_times_all=spike_times_all)
-np.save(os.path.join(data_root, "pops_connection_matrices.npy"), connection_matrices)
+np.save(os.path.join(data_root, "inter_pops_connection_matrices.npy"), connection_matrices)
 
-num_trials = 1000  # number of random assignments to test
+
+
+num_trials = 0 # number of random assignments to test
+if num_trials == 0:
+    exit()
 num_pops = len(populations)
 num_chips = 3
 cores_per_chip = 4

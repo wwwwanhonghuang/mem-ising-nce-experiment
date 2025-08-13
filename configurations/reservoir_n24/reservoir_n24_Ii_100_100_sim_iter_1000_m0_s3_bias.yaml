@@ -1,0 +1,29 @@
+project:
+  name: "reservoir_n24_Ii_100_100_sim_iter_1000_m0_s3_bias"
+
+network:
+  type: bias_reservoir
+  n_pops: 24
+  simulation_times: 2000
+  neurons_per_pop: 256
+  dt: 1.0
+  image_store:
+    enabled: true
+    raster_image: "image_raster.png"
+  spike_data_store:
+    path: "reservoir.npz"
+  currents:
+    type: interval
+    base_current: 10
+    start_time: 20
+    noise_level: 0.4
+    zero_current_interval: 100
+    current_interval: 100
+    apply_current_times_limits: 
+    select_neuron_populations: 
+  params:
+    weight_mean: 0
+    weight_std: 3
+
+ising_training:
+  n_epoches: 50

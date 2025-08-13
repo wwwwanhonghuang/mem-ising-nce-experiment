@@ -1,5 +1,5 @@
 project:
-  name: "spike_chain_n20_Ii_100_100_sim_iter_1000"
+  name: "spike_chain_n20_Ii_100_100_sim_iter_1000_m7_s1.2"
 
 network:
   type: spike_chain
@@ -14,15 +14,17 @@ network:
     path: "spike_chain.npz"
   currents:
     type: interval
-    base_current: 10
+    base_current: 12
     start_time: 20
     noise_level: 0.4
     zero_current_interval: 100
     current_interval: 100
+    apply_current_times_limits: 
+    select_neuron_populations: [0]
+
   params:
-    chain_weight_mean: 3.5
+    chain_weight_mean: 7
     chain_weight_std: 1.2
 
-
 ising_training:
-  n_epoches: 1000
+  n_epoches: 50

@@ -10,7 +10,7 @@ class LIFNeuronPopulation:
                  V_rest=-65.0,
                  dt=1.0,
                  W=None,
-                 noise_std=0.5):
+                 noise_std=0.5, weight_mean=1, weight_std=0.5):
         self.N = N
         self.tau_m = tau_m
         self.R = R
@@ -24,7 +24,7 @@ class LIFNeuronPopulation:
         self.spike_times = [[] for _ in range(N)]
         
         if W is None:
-            self.W = np.zeros((N, N))
+            self.W = np.random.normal(weight_mean, weight_std, size=(N, N))
         else:
             assert W.shape == (N, N), "Weight matrix must be NxN"
             self.W = W
