@@ -22,8 +22,8 @@ network:
     apply_current_times_limits: 
     select_neuron_populations: [0]
   params:
-    chain_weight_mean: 6
-    chain_weight_std: 1
+    weight_mean: 6
+    weight_std: 1
 
 ising_training:
   n_epoches: 50

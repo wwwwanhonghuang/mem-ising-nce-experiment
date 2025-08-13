@@ -49,16 +49,16 @@ data_root = os.path.join("projects", project_name, "data")
 
 if config['network']['type'] == 'spike_chain':
     populations, connection_matrices = get_spike_chain(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
-            dt = dt, chain_weight_mean=config['network']['params']['chain_weight_mean'], chain_weight_std=config['network']['params']['chain_weight_std'])
-    print(f"create spike_chain network, with chain_weight_mean = {config['network']['params']['chain_weight_mean']}, chain_weight_std={config['network']['params']['chain_weight_std']}")
+            dt = dt, weight_mean=config['network']['params']['weight_mean'], weight_std=config['network']['params']['weight_std'])
+    print(f"create spike_chain network, with weight_mean = {config['network']['params']['weight_mean']}, weight_std={config['network']['params']['weight_std']}")
 elif config['network']['type'] == 'reservoir':
     populations, connection_matrices = get_random_reservoir(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
             dt = dt, weight_mean=config['network']['params']['weight_mean'], weight_std=config['network']['params']['weight_std'])
-    print(f"create reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, chain_weight_std={config['network']['params']['weight_std']}")
+    print(f"create reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, weight_std={config['network']['params']['weight_std']}")
 elif config['network']['type'] == 'bias_reservoir':
     populations, connection_matrices = get_biased_reservoir(num_pops=num_pops, neurons_per_pop = neurons_per_pop, 
             dt = dt, weight_mean=config['network']['params']['weight_mean'], weight_std=config['network']['params']['weight_std'])
-    print(f"create bias reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, chain_weight_std={config['network']['params']['weight_std']}")
+    print(f"create bias reservoir network, with weight_mean = {config['network']['params']['weight_mean']}, weight_std={config['network']['params']['weight_std']}")
 else:
     raise NotImplementedError
 

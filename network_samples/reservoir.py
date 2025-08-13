@@ -65,8 +65,8 @@ def get_biased_reservoir(num_pops=29, neurons_per_pop=256, dt=1.0,  weight_mean=
     
     return populations, connection_matrices
 
-def get_spike_chain(num_pops = 29, neurons_per_pop=256, dt=1.0, chain_weight_mean=3.5, chain_weight_std=1.2):
-    populations = [LIFNeuronPopulation(neurons_per_pop, dt=dt, noise_std=0.7, weight_mean=chain_weight_mean, weight_std=chain_weight_std) for _ in range(num_pops)]
+def get_spike_chain(num_pops = 29, neurons_per_pop=256, dt=1.0, weight_mean=3.5, weight_std=1.2):
+    populations = [LIFNeuronPopulation(neurons_per_pop, dt=dt, noise_std=0.7, weight_mean=weight_mean, weight_std=weight_std) for _ in range(num_pops)]
 
     # Base weak random connections
     connection_matrices = np.zeros((num_pops, num_pops, neurons_per_pop, neurons_per_pop))
@@ -74,6 +74,6 @@ def get_spike_chain(num_pops = 29, neurons_per_pop=256, dt=1.0, chain_weight_mea
     for i in range(num_pops):
         j = (i + 1) % num_pops  # next population in the chain, wraps around
         # Make strong connections from pop i -> pop j
-        connection_matrices[j, i] = np.random.normal(chain_weight_mean, chain_weight_std, (neurons_per_pop, neurons_per_pop))
+        connection_matrices[j, i] = np.random.normal(weight_mean, weight_std, (neurons_per_pop, neurons_per_pop))
 
     return populations, connection_matrices

@@ -18,3 +18,10 @@ partitioning_all:
 		echo "Running partitioning experiment with config: $$yamlfile"; \
 		python partitioning_main.py --configuration-file-path "$$yamlfile"; \
 	done
+
+evaluation_all:
+	@echo "Running all experiments..."
+	@for yamlfile in $(shell find ./configurations -type f -name "*.yaml"); do \
+		echo "Running partitioning experiment with config: $$yamlfile"; \
+		python evaluation.py --configuration-file-path "$$yamlfile"; \
+	done

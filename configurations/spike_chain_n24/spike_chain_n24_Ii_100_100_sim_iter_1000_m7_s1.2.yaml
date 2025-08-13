@@ -23,8 +23,8 @@ network:
     select_neuron_populations: [0]
 
   params:
-    chain_weight_mean: 7
-    chain_weight_std: 1.2
+    weight_mean: 7
+    weight_std: 1.2
 
 ising_training:
   n_epoches: 50
