@@ -81,8 +81,27 @@ partition_results = {
 def evaluate(partitioning_scheme, spike_times_all, neuron_indices_all):
     pass
 
-def random_partitioning_and_mapping():
-    pass
+def random_partitioning_and_mapping(num_neurons: int, K: int):
+    """
+    Randomly partition `num_neurons` neurons into groups of size <= K.
+
+    Args:
+        num_neurons : int
+            Total number of neurons to partition.
+        K : int
+            Maximum number of neurons per group.
+
+    Returns:
+        List[List[int]] : List of groups (each group is a list of neuron indices)
+    """
+    # Shuffle neuron indices
+    neuron_indices = np.random.permutation(num_neurons)
+    
+    # Split into chunks of size <= K
+    parts = [list(neuron_indices[i:i + K]) for i in range(0, num_neurons, K)]
+    
+    return parts
+
 
 records = {
     method: {} for method in partition_methods
