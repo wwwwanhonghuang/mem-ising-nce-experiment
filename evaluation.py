@@ -12,6 +12,8 @@ import tqdm
 
 import pickle
 
+from utils import evaluate_partitioning_core_only, evaluate_partitioning_core_chip
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--configuration-file-path", type=str)
 
@@ -78,10 +80,15 @@ partition_results = {
 }
 
 
-def evaluate(partitioning_scheme, spike_times_all, neuron_indices_all):
-    pass
+def evaluate_core_only(partitioning_scheme, spike_times_all, neuron_indices_all):
+    assignments = np.zeros((n_sites))
+    for partiton_id, configuration in enumerate(partitioning_scheme):
+        for pop_id in configuration:
+            assignments[pop_id] = partiton_id
+    evaluate_partitioning_core_only(populations=populations, assignments=assignments)
+    
 
-def random_partitioning_and_mapping(num_neurons: int, K: int):
+def random_partitioning_and_mapping_core_only(num_neurons: int, K: int):
     """
     Randomly partition `num_neurons` neurons into groups of size <= K.
 
@@ -103,9 +110,48 @@ def random_partitioning_and_mapping(num_neurons: int, K: int):
     return parts
 
 
+def random_partitioning_and_mapping_core_and_chip(
+    num_neurons_core: int,
+    num_neurons_chip: int,
+    K_core: int,
+    K_chip: int
+):
+    """
+    Randomly partition neurons into 'core' and 'chip' groups with separate limits.
+
+    Args:
+        num_neurons_core : int
+            Number of neurons to assign to core partitions.
+        num_neurons_chip : int
+            Number of neurons to assign to chip partitions.
+        K_core : int
+            Maximum neurons per core node.
+        K_chip : int
+            Maximum neurons per chip node.
+
+    Returns:
+        Tuple[List[List[int]], List[List[int]]]:
+            (core_parts, chip_parts)
+            Each is a list of groups (lists of neuron indices).
+    """
+    # Shuffle neuron indices
+    all_core_indices = np.random.permutation(num_neurons_core)
+    all_chip_indices = np.random.permutation(num_neurons_chip)
+    
+    # Split into chunks for core
+    core_parts = [list(all_core_indices[i:i + K_core]) 
+                  for i in range(0, num_neurons_core, K_core)]
+    
+    # Split into chunks for chip
+    chip_parts = [list(all_chip_indices[i:i + K_chip]) 
+                  for i in range(0, num_neurons_chip, K_chip)]
+    
+    return core_parts, chip_parts
+
+
 records = {
     method: {} for method in partition_methods
-} | {'random': {}}
+} | {'random': {}, 'random_core_chip': {}}
 
 def run_simulations(n_simulation_trails=1000):
     for trail_id in tqdm(range(n_simulation_trails), desc='simulating'):
@@ -158,13 +204,23 @@ def run_simulations(n_simulation_trails=1000):
         
         
         for method in partition_methods:
-            results = evaluate(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+            results = evaluate_core_only(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
             records[method][trail_id] =  results
         
         records['random'][trail_id] = []
         for _ in range(random_partitioning_count_each_trail):
-            results = evaluate(partitioning_scheme=random_partitioning_and_mapping(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+            results = evaluate_core_only(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
             records['random'][trail_id].append(results)
+            
+            
+        for method in partition_methods:
+            results = evaluate_partitioning_core_chip(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+            records[method][trail_id] =  results
+        
+        records['random_core_chip'][trail_id] = []
+        for _ in range(random_partitioning_count_each_trail):
+            results = evaluate_partitioning_core_chip(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+            records['random_core_chip'][trail_id].append(results)
 
 print(f'evaluation finished.')
 
