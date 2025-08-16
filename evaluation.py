@@ -7,8 +7,9 @@ from ising_models.ising_trainer import TrainingContext, PairwiseIsingModel
 from neurons.lif_neuron import LIFNeuronPopulation
 from current_generator.interval_current_generator import IntervalCurrentGenerator 
 
+from evaluation.simulation import *
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
 import pickle
 
@@ -51,8 +52,8 @@ dt = config['network']['dt']
 
 weight_mean=config['network']['params']['weight_mean']
 weight_std=config['network']['params']['weight_std']
-partition_save_root = os.path.join("project", project_name, "partition_schemes")
-evaluation_results_save_root = os.path.join("project", project_name, "evaluation_results")
+partition_save_root = os.path.join("projects", project_name, "partition_schemes")
+evaluation_results_save_root = os.path.join("projects", project_name, "evaluation_results")
 
 ## Evaluation 1 - original network
 save_weights = np.load(os.path.join(data_root, 'inner_pops_connection_matrices.npy'), allow_pickle=True)
@@ -75,10 +76,9 @@ random_partitioning_count_each_trail = 1000
 partition_methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
 
 partition_results = {
-    method: np.load(os.path.join(partition_save_root, f'partition_scheme_core_only_{method}.npz'), allow_pickle=True)['arr_0']
+    method: np.load(os.path.join(partition_save_root, f'partition_scheme_core_only_{method}.npy'), allow_pickle=True)[0]
     for method in partition_methods
 }
-
 
 def evaluate_core_only(partitioning_scheme, spike_times_all, neuron_indices_all):
     assignments = np.zeros((n_sites))
@@ -153,79 +153,67 @@ records = {
     method: {} for method in partition_methods
 } | {'random': {}, 'random_core_chip': {}}
 
-def run_simulations(n_simulation_trails=1000):
+
+T = n_simulation_times
+def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strategy='random', frequency_strategy='fixed', max_pop_per_core=2, n_cores_per_chip=4, n_chips=3):
+    records[record_key] = {}
     for trail_id in tqdm(range(n_simulation_trails), desc='simulating'):
+        
         if config['network']['currents']['type'] == 'interval':
             select_neuron_populations = config['network']['currents']['select_neuron_populations']
             apply_current_times_limits = config['network']['currents']['apply_current_times_limits']
             current_generator = IntervalCurrentGenerator(num_pops=num_pops, n_times=T, neurons_per_pop=neurons_per_pop, select_neurons=select_neuron_populations, limit_current_times=apply_current_times_limits)
             I_ext = current_generator.generate_currents()
-        time = np.arange(0, n_simulation_times, dt)
-
-        V_trace = np.zeros((len(time), num_pops, neurons_per_pop))
-        spikes_record = np.zeros((len(time), num_pops, neurons_per_pop), dtype=bool)
-
-        # Initialize spike state for previous step (per population)
-        S_prev = np.zeros((num_pops, neurons_per_pop))
-
-        for t_i, t in tqdm(enumerate(n_simulation_times)):
-            # Compute inputs to each population from all populations
-            inputs = np.zeros((num_pops, neurons_per_pop))
-            for target_pop in range(num_pops):
-                # Sum over all source populations
-                for source_pop in range(num_pops):
-                    inputs[target_pop] += connection_matrices[target_pop, source_pop] @ S_prev[source_pop]
+        
+        network = Network(num_pops=num_pops, neurons_per_pop=neurons_per_pop, connection_matrices=connection_matrices, populations=populations)
+        if frequency_strategy == 'fixed':
+            hardware_configuration = HardwareConfiguration(n_cores=n_cores_per_chip, n_chips=n_chips, frequency_configuration= [[1000] * n_cores_per_chip] * n_chips)
+        hardware = VirtualNeuromorphicHardware(hardware_configuration)
+        
+        if partitioning_strategy == 'random':
+            deployment_configuration = random_partitioning_and_mapping_core_only(num_neurons=num_pops, K=max_pop_per_core)
             
-            # Add external input
-            total_input = inputs + I_ext[t_i]
-            
-            # Step populations independently
-            for p in range(num_pops):
-                spikes = populations[p].step(total_input[p], t)
-                V_trace[t_i, p] = populations[p].V
-                spikes_record[t_i, p] = spikes
-                S_prev[p] = spikes
-
-        spike_times_all = []
-        neuron_indices_all = []
-
-        for pop_idx in range(num_pops):
-            for neuron_idx in range(neurons_per_pop):
-                # Get spike times for this neuron
-                stimes = populations[pop_idx].spike_times[neuron_idx]
-                # Global neuron ID (pop * neurons_per_pop + neuron)
-                global_id = pop_idx * neurons_per_pop + neuron_idx
-                spike_times_all.extend(stimes)
-                neuron_indices_all.extend([global_id] * len(stimes))
-
-        spike_times_all = np.array(spike_times_all)
-        neuron_indices_all = np.array(neuron_indices_all)
+        print(f"Deployment configuration == {deployment_configuration}")
+        spike_times_all, neuron_indices_all = hardware.do_simulation(dt=dt, n_simulation_times=n_simulation_times, deployment_configuration=deployment_configuration, network=network, I_ext=I_ext)
         
+        # for method in partition_methods:
+        #     results = evaluate_core_only(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+        #     records[method][trail_id] =  results
         
+        hardware.performance_monitor.report_performance()
+        records[record_key][trail_id] = dict(hardware.performance_monitor.cost)
         
-        for method in partition_methods:
-            results = evaluate_core_only(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
-            records[method][trail_id] =  results
-        
-        records['random'][trail_id] = []
-        for _ in range(random_partitioning_count_each_trail):
-            results = evaluate_core_only(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
-            records['random'][trail_id].append(results)
+        # records['random'][trail_id] = []
+        # for _ in range(random_partitioning_count_each_trail):
+        #     results = evaluate_core_only(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+        #     records['random'][trail_id].append(results)
             
             
-        for method in partition_methods:
-            results = evaluate_partitioning_core_chip(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
-            records[method][trail_id] =  results
+        # for method in partition_methods:
+        #     results = evaluate_partitioning_core_chip(partitioning_scheme=partition_results[method], spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+        #     records[method][trail_id] =  results
         
-        records['random_core_chip'][trail_id] = []
-        for _ in range(random_partitioning_count_each_trail):
-            results = evaluate_partitioning_core_chip(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
-            records['random_core_chip'][trail_id].append(results)
+        # records['random_core_chip'][trail_id] = []
+        # for _ in range(random_partitioning_count_each_trail):
+        #     results = evaluate_partitioning_core_chip(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
+        #     records['random_core_chip'][trail_id].append(results)
+
+
+def evaluation_entry(type, n_trails):
+    if type == "fixed_freq_maximum_random_partitioning":
+        run_simulations(n_trails, record_key = 'fixed_freq_maximum_random_partitioning', frequency_strategy='fixed', partitioning_strategy='random')
+    elif type == "variable_freq_avg_1std_random_partitioning":
+        raise NotImplementedError
+    elif type == "variable_freq_avg_2std_random_partitioning":
+        raise NotImplementedError
+    elif type == "variable_freq_avg_m1std_random_partitioning":
+        raise NotImplementedError
+    elif type == "variable_freq_avg_m2std_random_partitioning":
+        raise NotImplementedError
+    elif type == "variable_freq_ising_partitioning":
+        raise NotImplementedError
 
 print(f'evaluation finished.')
 
-with open(os.path.join(evaluation_results_save_root, "evaluation_record.pkl"), 'wb') as f:
-    pickle.dump(records, f)
-
-## Evaluation 2
-
+# with open(os.path.join(evaluation_results_save_root, "evaluation_record.pkl"), 'wb') as f:
+#     pickle.dump(records, f)

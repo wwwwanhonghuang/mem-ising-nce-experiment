@@ -116,12 +116,12 @@ def partition_J(
 
 
 methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
-partition_save_root = os.path.join("project", project_name, "partition_schemes")
+partition_save_root = os.path.join("projects", project_name, "partition_schemes")
 os.makedirs(partition_save_root, exist_ok=True)
  
 for method in methods:
     print(f'use_{method} for partitioning')
     parts, score = partition_J(J, K=4, method=method, use_abs=True, refine=True)
     print(parts, score)
-    # np.savez(os.path.join(partition_save_root, f"partition_scheme_core_only_{method}.npz"), (parts, score))
+    np.save(os.path.join(partition_save_root, f"partition_scheme_core_only_{method}.npy"), np.asarray([parts, score], dtype=object), allow_pickle=True)
     

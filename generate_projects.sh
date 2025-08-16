@@ -1,3 +1,4 @@
+
 configuration_folders=(./configurations/spike_chain_n24 ./configurations/reservoir_n24)
 
 for configuration_folder in "${configuration_folders[@]}"
