@@ -70,7 +70,7 @@ populations, connection_matrices = load_original_network()
 
 
 n_simulation_trails = 1000
-n_simulation_times = 2000
+n_simulation_times = 200
 random_partitioning_count_each_trail = 1000
 
 partition_methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
@@ -198,7 +198,6 @@ def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strate
         #     results = evaluate_partitioning_core_chip(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
         #     records['random_core_chip'][trail_id].append(results)
 
-
 def evaluation_entry(type, n_trails):
     if type == "fixed_freq_maximum_random_partitioning":
         run_simulations(n_trails, record_key = 'fixed_freq_maximum_random_partitioning', frequency_strategy='fixed', partitioning_strategy='random')
@@ -212,6 +211,10 @@ def evaluation_entry(type, n_trails):
         raise NotImplementedError
     elif type == "variable_freq_ising_partitioning":
         raise NotImplementedError
+    elif type == "random":
+        run_simulations(n_trails, record_key = 'random', frequency_strategy='fixed', partitioning_strategy='random')
+
+evaluation_entry('random', 1)
 
 print(f'evaluation finished.')
 
