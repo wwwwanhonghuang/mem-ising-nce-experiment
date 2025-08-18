@@ -25,17 +25,17 @@ class IntervalCurrentGenerator(BaseIntervalCurrentGenerator):
         zero_current_interval = self.zero_current_interval
         current_interval = self.current_interval
         
+                
+        # Provide current for 'current_interval', 
+        # then stop current for 'zero_current_interval', and repeat. Maximum repeat times of a neuron population = limit_current_times_this_population
         while current_time < self.n_times:
             
-            # Example: provide a pulse input to each population at different time windows, add small variation per neuron
             for p_index in (range(self.num_pops) if (self.select_neurons is None) else range(len(self.select_neurons))):
                 selected_neuron = self.select_neurons[p_index] if self.select_neurons is not None else p_index
                 limit_current_times_this_population = self.limit_current_times[selected_neuron] if self.limit_current_times is not None else np.inf
                 if apply_current_times >= limit_current_times_this_population:
                     continue
-                
-                
-                
+                                
                 for n in (range(self.neurons_per_pop)):    
                     end = current_time + current_interval
                     I_ext[current_time: end, selected_neuron, n] = base_current + np.random.uniform(-noise_level, noise_level)

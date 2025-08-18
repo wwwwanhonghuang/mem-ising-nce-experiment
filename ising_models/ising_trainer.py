@@ -10,8 +10,6 @@ class TrainingContext():
         self.kl_loss = kl_loss
         self.l2_loss = l2_loss
 
-import numpy as np
-
 class AdamOptimizer:
     def __init__(self, shape_J, shape_H, lr=0.01, beta1=0.9, beta2=0.999, eps=1e-8):
         # Learning rate and hyperparameters

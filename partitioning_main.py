@@ -121,7 +121,7 @@ os.makedirs(partition_save_root, exist_ok=True)
  
 for method in methods:
     print(f'use_{method} for partitioning')
-    parts, score = partition_J(J, K=4, method=method, use_abs=True, refine=True)
+    parts, score = partition_J(J, K=4, method=method, use_abs=False, refine=True)
     print(parts, score)
     np.save(os.path.join(partition_save_root, f"partition_scheme_core_only_{method}.npy"), np.asarray([parts, score], dtype=object), allow_pickle=True)
     
