@@ -4,6 +4,7 @@ from tqdm import tqdm
 from typing import List, Dict, Optional, Tuple
 from collections import Counter
 from math import log, lgamma
+from scipy.special import gammaln
 
 from collections import Counter
 import zlib
@@ -14,8 +15,6 @@ class HardwareConfiguration(object):
         self.n_cores = n_cores
         self.n_chips = n_chips
         self.frequency_configuration = frequency_configuration
-        
-        
         
         
 
@@ -91,7 +90,7 @@ def _binary_entropy(p: np.ndarray, base: int = 2):
         return -(p*np.log2(p) + (1-p)*np.log2(1-p))
     else:
         return -(p*np.log(p) + (1-p)*np.log(1-p))
-from scipy.special import gammaln
+
 def _binomial_entropy_exact(K, p_array, base=2):
     """
     Compute the exact binomial entropy per timestep for a population of K neurons.
