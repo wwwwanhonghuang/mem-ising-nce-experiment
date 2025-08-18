@@ -192,38 +192,53 @@ def partition_louvain(J: np.ndarray, K: int, use_abs: bool = False) -> List[List
         final_parts.extend(finalize_groups(grp, K) if len(grp) > K else [grp])
     return final_parts
 
-# ---------- Kernighan–Lin (positive weights only, robust) ----------
-
+# ---------- Kernighan–Lin  ----------
 def partition_kernighan_lin(J: np.ndarray, K: int, use_abs: bool = False) -> List[List[int]]:
-    W = ensure_symmetric(np.abs(J) if use_abs else J)
-    # shift all weights to be positive
-    min_w = np.min(J)
-    shift = -min_w + 1e-9 if min_w < 0 else 1e-9
-    W = J + shift
+    """
+    Kernighan–Lin partitioning for signed or unsigned weights.
+    Keeps negative weights, optionally uses absolute values.
     
+    Args:
+        J: Coupling matrix (n x n)
+        K: Maximum cluster size for stopping recursion
+        use_abs: Whether to use absolute values of couplings
+
+    Returns:
+        List of partitions (each partition is a list of node indices)
+    """
+    # Ensure symmetric
+    W = ensure_symmetric(np.abs(J) if use_abs else J)
+
     n = W.shape[0]
     G = nx.Graph()
     G.add_nodes_from(range(n))
     for i in range(n):
-        for j in range(i+1, n):
-            w = W[i, j]
-            if w > 0:
-                G.add_edge(i, j, weight=float(w))
+        for j in range(i + 1, n):
+            # Include all weights, negative or positive
+            G.add_edge(i, j, weight=float(W[i, j]))
 
+    # Recursive bisection
     parts = [list(range(n))]
     final_parts = []
+
     while parts:
         grp = parts.pop()
         if len(grp) <= K or len(grp) < 2:
             final_parts.append(grp)
             continue
+
         subG = G.subgraph(grp)
         try:
+            # Initial bisection (half/half)
             half = len(grp) // 2
-            init_A = set(grp[:half]); init_B = set(grp[half:])
+            init_A = set(grp[:half])
+            init_B = set(grp[half:])
             A, B = kernighan_lin_bisection(subG, partition=(init_A, init_B), weight='weight')
         except Exception:
+            # Fallback if KL fails
             mid = len(grp) // 2
             A, B = set(grp[:mid]), set(grp[mid:])
+
         parts.extend([list(A), list(B)])
+
     return final_parts
