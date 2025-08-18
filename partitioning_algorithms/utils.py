@@ -170,7 +170,7 @@ def partition_simple_kmedoids(J: np.ndarray, K: int, use_abs: bool = False) -> L
 def partition_louvain(J: np.ndarray, K: int, use_abs: bool = False) -> List[List[int]]:
     W = ensure_symmetric(np.abs(J) if use_abs else J)
     min_w = np.min(J)
-    shift = -min_w + 1e-6 if min_w < 0 else 0.0
+    shift = -min_w + 1e-9 if min_w < 0 else 1e-9
     W = J + shift
     
     n = W.shape[0]
@@ -198,7 +198,7 @@ def partition_kernighan_lin(J: np.ndarray, K: int, use_abs: bool = False) -> Lis
     W = ensure_symmetric(np.abs(J) if use_abs else J)
     # shift all weights to be positive
     min_w = np.min(J)
-    shift = -min_w + 1e-6 if min_w < 0 else 0.0
+    shift = -min_w + 1e-9 if min_w < 0 else 1e-9
     W = J + shift
     
     n = W.shape[0]
