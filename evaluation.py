@@ -55,6 +55,8 @@ weight_std=config['network']['params']['weight_std']
 partition_save_root = os.path.join("projects", project_name, "partition_schemes")
 evaluation_results_save_root = os.path.join("projects", project_name, "evaluation_results")
 
+os.makedirs(evaluation_results_save_root, exist_ok=True)
+
 ## Evaluation 1 - original network
 save_weights = np.load(os.path.join(data_root, 'inner_pops_connection_matrices.npy'), allow_pickle=True)
 
@@ -70,7 +72,7 @@ populations, connection_matrices = load_original_network()
 
 
 n_simulation_trails = 1000
-n_simulation_times = 200
+n_simulation_times = 2000
 random_partitioning_count_each_trail = 1000
 
 partition_methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
@@ -155,7 +157,7 @@ records = {
 
 
 T = n_simulation_times
-def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strategy='random', frequency_strategy='fixed', max_pop_per_core=2, n_cores_per_chip=4, n_chips=3):
+def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strategy='random', frequency_strategy='fixed', max_pop_per_core=4, n_cores_per_chip=4, n_chips=3):
     records[record_key] = {}
     for trail_id in tqdm(range(n_simulation_trails), desc='simulating'):
         
@@ -197,6 +199,10 @@ def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strate
         # for _ in range(random_partitioning_count_each_trail):
         #     results = evaluate_partitioning_core_chip(partitioning_scheme=random_partitioning_and_mapping_core_only(), spike_times_all=spike_times_all, neuron_indices_all=neuron_indices_all)
         #     records['random_core_chip'][trail_id].append(results)
+        records[record_key][trail_id]['evaluated_entropy'] = hardware.performance_monitor.evaluated_entropy
+        records[record_key][trail_id]['evaluated_compressions'] = hardware.performance_monitor.evaluated_compressions
+    return records
+
 
 def evaluation_entry(type, n_trails):
     if type == "fixed_freq_maximum_random_partitioning":
@@ -212,11 +218,15 @@ def evaluation_entry(type, n_trails):
     elif type == "variable_freq_ising_partitioning":
         raise NotImplementedError
     elif type == "random":
-        run_simulations(n_trails, record_key = 'random', frequency_strategy='fixed', partitioning_strategy='random')
+        records = run_simulations(n_trails, record_key = 'random', frequency_strategy='fixed', partitioning_strategy='random')
+        return records
 
-evaluation_entry('random', 1)
+records = evaluation_entry('random', n_simulation_trails)
+random_evaluation_record_save_path = os.path.join(evaluation_results_save_root, "evaluation_record_randoms.pkl")
+with open(random_evaluation_record_save_path, 'wb') as f:
+    pickle.dump(records, f)
+    print(records)
+    print(f'random_evaluation_record_save_path dumped to {random_evaluation_record_save_path}')
 
 print(f'evaluation finished.')
 
-# with open(os.path.join(evaluation_results_save_root, "evaluation_record.pkl"), 'wb') as f:
-#     pickle.dump(records, f)

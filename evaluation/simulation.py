@@ -112,16 +112,21 @@ def _binomial_entropy_exact(K, p_array, base=2):
     T = len(p_array)
     k_vals = np.arange(0, K+1)[:, None]  # shape (K+1, 1)
     p_vals = p_array[None, :]            # shape (1, T)
+    
+    p_vals = np.clip(p_vals, 1e-24, 1-1e-24)
+    logC = gammaln(K+1) - gammaln(k_vals) - gammaln(K - k_vals + 1)  # shape (K+1, 1)
 
-    # Compute binomial coefficients (log-space) for broadcasting
-    logC = gammaln(K+1) - gammaln(k_vals+1) - gammaln(K-k_vals+1)  # shape (K+1,1)
+    # Compute unnormalized probabilities in log-space for stability
+    log_probs = logC + k_vals*np.log(p_vals) + (K - k_vals)*np.log(1 - p_vals)  # shape (K+1, T)
 
-    # Compute binomial probabilities for each timestep
-    probs = np.exp(logC + k_vals*np.log(p_vals) + (K-k_vals)*np.log(1-p_vals))  # shape (K+1, T)
-    probs /= probs.sum(axis=0, keepdims=True)  # normalize per timestep
+    # Exponentiate and normalize safely
+    max_log = np.max(log_probs, axis=0, keepdims=True)  # for numerical stability
+    probs = np.exp(log_probs - max_log)
+    probs_sum = probs.sum(axis=0, keepdims=True)
+    probs /= np.clip(probs_sum, 1e-24, None)  # avoid division by zero
 
-    # Compute entropy per timestep
-    entropy = -np.sum(probs * np.log(probs) / np.log(base), axis=0)  # shape (T,)
+    # Compute entropy per timestep safely
+    entropy = -np.sum(probs * np.log(np.clip(probs, 1e-12, None)) / np.log(base), axis=0)  # shape (T,)
 
     return entropy
 
@@ -188,9 +193,17 @@ def binary_entropy(p, base=2):
     return -(p*np.log(p) + (1-p)*np.log(1-p)) / np.log(base)
 
 def spike_count_entropy(flat, base=2):
+    # sum spikes per row
     counts = flat.sum(axis=1)
+    counts = counts.astype(int)  # convert to integer
+    
+    # compute histogram
     probs = np.bincount(counts, minlength=flat.shape[1]+1) / len(counts)
-    probs = probs[probs>0]
+    
+    # remove zeros
+    probs = probs[probs > 0]
+    
+    # entropy
     return -np.sum(probs * np.log(probs) / np.log(base))
 
 def independent_entropy(flat, base=2):
@@ -455,7 +468,20 @@ def evaluate_partition_entropy_reduced_statistics(
     return results
 
 def evaluate_compressions(deployment_configuration: List[List[int]], spikes_record: np.ndarray, K = 512):
-    return evaluate_partition_compression_large_K(spikes_record.reshape(-1, 512), K=K)
+    T, n_pops, n_neurons_per_pop = spikes_record.shape
+    max_population_one_core = max([len(neuron_population_ids) for neuron_population_ids in deployment_configuration])
+    n_partitions = len(deployment_configuration)  # assuming each population is a partition
+    padded_spikes = np.zeros((T, n_partitions, max_population_one_core * n_neurons_per_pop))
+    for p in range(n_partitions):
+        pop_size = len(deployment_configuration[p])
+        # enumeration id and population id in deployment_configuration
+        for pop_index, pop in enumerate(deployment_configuration[p]):
+            # place to p-th partition's record.
+            padded_spikes[:, p, pop_index * n_neurons_per_pop: pop_index * n_neurons_per_pop +  n_neurons_per_pop] = spikes_record[:, pop, :].reshape(T, -1)
+
+    final_spikes = padded_spikes.reshape(T * n_partitions, max_population_one_core * n_neurons_per_pop)
+
+    return evaluate_partition_compression_large_K(final_spikes, K=max_population_one_core * 256)
     
 class VirtualNeuromorphicHardware():
     def __init__(self, configuration: HardwareConfiguration = None):
