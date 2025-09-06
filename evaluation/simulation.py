@@ -537,6 +537,8 @@ class VirtualNeuromorphicHardware():
         neuron_indices_all = []
         performance_monitor.evaluated_entropy = evaluate_partition_entropy_reduced_statistics(deployment_configuration, spikes_record)
         performance_monitor.evaluated_compressions = evaluate_compressions(deployment_configuration=deployment_configuration, spikes_record=spikes_record)
+        assert performance_monitor.evaluated_entropy is not None
+        assert performance_monitor.evaluated_compressions is not None
 
         for pop_idx in range(network.num_pops):
             for neuron_idx in range(network.neurons_per_pop):

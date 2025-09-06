@@ -71,9 +71,9 @@ populations, connection_matrices = load_original_network()
 
 
 
-n_simulation_trails = 1000
+n_simulation_trails = 500
 n_simulation_times = 2000
-random_partitioning_count_each_trail = 1000
+random_partitioning_count_each_trail = 500
 
 partition_methods = ['greedy', 'agglomerative', 'spectral', 'simple_kmedoids', 'louvain', 'kernighan_lin']
 
@@ -170,10 +170,14 @@ def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strate
         network = Network(num_pops=num_pops, neurons_per_pop=neurons_per_pop, connection_matrices=connection_matrices, populations=populations)
         if frequency_strategy == 'fixed':
             hardware_configuration = HardwareConfiguration(n_cores=n_cores_per_chip, n_chips=n_chips, frequency_configuration= [[1000] * n_cores_per_chip] * n_chips)
+        
         hardware = VirtualNeuromorphicHardware(hardware_configuration)
         
         if partitioning_strategy == 'random':
             deployment_configuration = random_partitioning_and_mapping_core_only(num_neurons=num_pops, K=max_pop_per_core)
+        elif partitioning_strategy in partition_methods:
+            print(f'evaluate method {partitioning_strategy}')
+            deployment_configuration = partition_results[partitioning_strategy]
             
         print(f"Deployment configuration == {deployment_configuration}")
         spike_times_all, neuron_indices_all = hardware.do_simulation(dt=dt, n_simulation_times=n_simulation_times, deployment_configuration=deployment_configuration, network=network, I_ext=I_ext)
@@ -205,28 +209,31 @@ def run_simulations(n_simulation_trails=1000, record_key="", partitioning_strate
 
 
 def evaluation_entry(type, n_trails):
-    if type == "fixed_freq_maximum_random_partitioning":
-        run_simulations(n_trails, record_key = 'fixed_freq_maximum_random_partitioning', frequency_strategy='fixed', partitioning_strategy='random')
-    elif type == "variable_freq_avg_1std_random_partitioning":
-        raise NotImplementedError
-    elif type == "variable_freq_avg_2std_random_partitioning":
-        raise NotImplementedError
-    elif type == "variable_freq_avg_m1std_random_partitioning":
-        raise NotImplementedError
-    elif type == "variable_freq_avg_m2std_random_partitioning":
-        raise NotImplementedError
-    elif type == "variable_freq_ising_partitioning":
-        raise NotImplementedError
-    elif type == "random":
+    if  type == "random":
         records = run_simulations(n_trails, record_key = 'random', frequency_strategy='fixed', partitioning_strategy='random')
         return records
+    elif type in partition_methods:
+        records = run_simulations(n_trails, record_key = type, frequency_strategy='fixed', partitioning_strategy=type)
+        return records
+    raise NotImplementedError
 
-records = evaluation_entry('random', n_simulation_trails)
-random_evaluation_record_save_path = os.path.join(evaluation_results_save_root, "evaluation_record_randoms.pkl")
-with open(random_evaluation_record_save_path, 'wb') as f:
-    pickle.dump(records, f)
-    print(records)
-    print(f'random_evaluation_record_save_path dumped to {random_evaluation_record_save_path}')
+# records = evaluation_entry('random', n_simulation_trails)
+# random_evaluation_record_save_path = os.path.join(evaluation_results_save_root, "evaluation_record_randoms.pkl")
+# with open(random_evaluation_record_save_path, 'wb') as f:
+#     pickle.dump(records, f)
+#     print(records)
+#     print(f'random_evaluation_record_save_path dumped to {random_evaluation_record_save_path}')
+
+
+for method in partition_methods:
+    records = evaluation_entry(method, 1)
+    evaluation_record_save_path = os.path.join(evaluation_results_save_root, f"evaluation_record_{method}.pkl")
+        
+    with open(evaluation_record_save_path, 'wb') as f:
+        pickle.dump(records, f)
+        print(records)
+        print(f'evaluation records dumped to {evaluation_record_save_path}')
+
 
 print(f'evaluation finished.')
 

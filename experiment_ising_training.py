@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from ising_models.ising_model import PairwiseIsingModelInferencer, PairwiseIsingModel, ConfigurationIterator, ConfigurationGenerator
-import numpy as np
 import argparse
 import os
 from ising_models.ising_trainer import PairwiseIsingModelTrainer
@@ -10,6 +9,9 @@ import pickle
 import time
 import yaml
 from numpy.lib.stride_tricks import sliding_window_view
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 def sliding_window_mean(mat, K):
     windows = sliding_window_view(mat, (K, mat.shape[1]))[:, 0, :, :]
@@ -141,8 +143,6 @@ def on_epoch_end(ctx):
 trained_model = trainer.train(reduced_mat, epochs=total_epoches, learning_rate=0.1, epoch_callback=on_epoch_end, configs=configs)
 
 
-import matplotlib.pyplot as plt
-import numpy as np
 
 def plot_alignment(observation_dataset, inferencer):
     """Plot alignment between observation averages and model averages."""
